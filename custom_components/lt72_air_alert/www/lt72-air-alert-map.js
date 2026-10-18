@@ -19,7 +19,8 @@ const LT72_COLORS = {
  yellow:["Geltona","#f4c95a"],
  yellow_after_red:["Geltona po raudonos","#f59e0b"],
  white:["Balta","#f5f7fb"],
- not_reported:["Nepaskelbta","#8190a3"]
+ not_reported:["LT72 įrašo nėra","#f5f7fb"],
+ unavailable:["Duomenų nėra","#8190a3"]
 };
 const LT72_BYKEY = Object.fromEntries(LT72_REGIONS.map(r => [r[0],r]));
 const LT72_BASE = "/lt72_air_alert/";
@@ -28,6 +29,15 @@ const LT72_ESC = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
 })[c]);
 const LT72_NORMAL = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const LT72_KEY = label => LT72_REGIONS.find(r => LT72_NORMAL(label).startsWith(LT72_NORMAL(r[1])))?.[0];
+
+// A blank LT72 entry is shown as white on the map for readability, but is
+// not treated as a published all-clear. An unreachable sensor stays grey.
+function lt72VisualCode(available, record) {
+ if (!available) return "unavailable";
+ if (!record) return "not_reported";
+ return ["red","yellow","yellow_after_red","white"].includes(record.kodas)
+   ? record.kodas : "unavailable";
+}
 
 function lt72MapPaths(topo) {
  const {arcs,transform,objects}=topo;
@@ -140,7 +150,7 @@ class LT72AirAlertMapCard extends HTMLElement {
    if (!this._selected) this._selected = LT72_KEY(sensor?.attributes?.apskritis) || "kauno";
    const selected = LT72_BYKEY[this._selected] || LT72_BYKEY.kauno;
    const current = published[selected[0]];
-   const code = available && current ? current.kodas : "not_reported";
+   const code = lt72VisualCode(available, current);
    const level = LT72_COLORS[code] || LT72_COLORS.not_reported;
    let message = "";
    if (!sensor) message = "Nerastas LT72 sensorius. Pridėkite Lietuvos oro pavojaus integraciją.";
@@ -149,20 +159,24 @@ class LT72AirAlertMapCard extends HTMLElement {
    else message = "Paskelbta: " + (current.paskelbta || "laikas nenurodytas");
    const countyShapes = this._shapes ? this._shapes.map(shape => {
      const e = published[shape.key];
-     const status = available && e ? e.kodas : "not_reported";
+     const status = lt72VisualCode(available, e);
      const l = LT72_COLORS[status] || LT72_COLORS.not_reported;
      const chosen = shape.key === selected[0];
      return '<g data-region="' + shape.key + '" tabindex="0" role="button" class="region' +
        (chosen ? ' selected' : '') + '" aria-label="' + LT72_ESC(shape.name + ': ' + (available ? l[0] : 'Neprieinama')) + '">' +
        '<path d="' + shape.path + '" fill="' + l[1] + '" stroke="' +
        (chosen ? '#3b82f6' : 'var(--divider-color,#526278)') +
-       '" stroke-width="' + (chosen ? '3.5' : '1.5') + '" stroke-linejoin="round"></path>' +
+       '" stroke-width="' + (chosen ? '3.5' : '1.5') +
+       '" stroke-dasharray="' + (status === "not_reported" && !chosen ? "4 3" : "none") +
+       '" stroke-linejoin="round"></path>' +
        '<text x="' + shape.x.toFixed(1) + '" y="' + shape.y.toFixed(1) +
        '" text-anchor="middle" dominant-baseline="middle" pointer-events="none">' +
        LT72_ESC(shape.short) + '</text><title>' +
        LT72_ESC(shape.name + ' apskritis: ' + l[0]) + '</title></g>';
    }).join("") : "";
-   const legends = Object.values(LT72_COLORS).map(l =>
+   const legends = Object.entries(LT72_COLORS)
+     .filter(([key]) => key !== "not_reported")
+     .map(([,l]) =>
      '<span class="legend-item"><span class="sample" style="background:' + l[1] +
      '"></span>' + LT72_ESC(l[0]) + '</span>'
    ).join("");
@@ -208,8 +222,9 @@ class LT72AirAlertMapCard extends HTMLElement {
      '<div class="status">' + LT72_ESC(available ? level[0] : 'Neprieinama') + '</div>',
      '<div class="desc">' + LT72_ESC(message) + '</div></div></div>',
      '<div class="legend">' + legends + '</div>',
-     '<div class="foot">Neoficialus LT72 rodinys. Pilka = nepaskelbta arba neprieinama, ne „saugu“. ',
-     'Vadovaukitės LT-Alert ir oficialiais perspėjimais.</div>',
+     '<div class="foot">Balta spalva = LT72 paskelbtas atšaukimas ARBA nėra įrašo ',
+     '(punktyrinė riba). Be įrašo nereiškia oficialaus pavojaus atšaukimo. ',
+     'Pilka = duomenys neprieinami. Vadovaukitės LT-Alert ir oficialiais perspėjimais.</div>',
      '</ha-card>'
    ].join("");
    root.querySelectorAll("[data-region]").forEach(node => {

@@ -7,7 +7,7 @@ Neoficiali Home Assistant integracija ir interaktyvus Lietuvos **oro pavojaus ž
 ## Galimybės
 
 - Tikras Lietuvos žemėlapis su visų **10 apskričių ribomis**, be iframe ir išorinių puslapių įterpimo.
-- Apskritys automatiškai nuspalvinamos pagal paskutinį LT72 paskelbtą pranešimą: **raudona, geltona, geltona po raudonos, balta**, o ten, kur įrašo nėra – **pilka**.
+- Apskritys automatiškai nuspalvinamos pagal LT72 pranešimus: **raudona, geltona, geltona po raudonos**. **Baltai** rodomas paskelbtas atšaukimas arba apskritis, apie kurią įrašo nėra (punktyrinė riba). **Pilka** – kai duomenys nepasiekiami.
 - Spustelėjus apskritį parodoma paskelbta būsena ir paskelbimo laikas.
 - Nuosava **oro pavojaus skydo ikona**.
 - Diegimo metu pasirenkama viena apskritis, kurios atskiras HA sensorius taip pat rodo visų apskričių duomenis atributuose.
@@ -26,7 +26,7 @@ Neoficiali Home Assistant integracija ir interaktyvus Lietuvos **oro pavojaus ž
 Šioje integracijoje Lovelace kortos JS modulis paprastai užregistruojamas automatiškai. Jei naudojate YAML režimo Lovelace resursus, pridėkite modulį rankiniu būdu per Dashboard → Resources:
 
 ```text
-/lt72_air_alert/lt72-air-alert-map.js?v=0.2.0
+/lt72_air_alert/lt72-air-alert-map.js?v=0.2.1
 ```
 
 ## Oro pavojaus žemėlapio korta
@@ -61,6 +61,6 @@ Visų apskričių būsenos laikomos sensoriaus `apskritys` atribute; sensoriaus 
 
 ## Saugumas
 
-Tai **ne oficialus ir ne garantuotai realaus laiko perspėjimų kanalas**: svetainės struktūra gali pasikeisti, o duomenys gali būti pavėluoti. **Pilka / Nepaskelbta** nėra saugumo patvirtinimas. **Balta** rodoma tik tada, kai LT72 aiškiai paskelbia būseną BALTA. Kai sensorius nepasiekiamas, korta nerodo senos būsenos kaip patikimos.
+Tai **ne oficialus ir ne garantuotai realaus laiko perspėjimų kanalas**: svetainės struktūra gali pasikeisti, o duomenys gali būti pavėluoti. **Balta žemėlapio spalva ne visada reiškia oficialų atšaukimą:** jei LT72 apskrities suvestinėje įrašo nėra, jos kontūras bus punktyrinis, o paspaudus bus rodoma „LT72 įrašo nėra“. Tik aiškiai LT72 paskelbtas BALTA reiškia atšaukimą. **Pilka** rodoma tik tada, kai duomenys neprieinami; korta nerodo senos būsenos kaip patikimos.
 
 Esant pavojui vadovaukitės **LT-Alert, sirenomis ir oficialiais institucijų perspėjimais**. [LT72 rekomendacijos](https://lt72.lt/rekomendacijos-oro-pavojaus-atveju-2/).

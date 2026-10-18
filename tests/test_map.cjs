@@ -23,4 +23,13 @@ assert.equal(new Set(features.map(x => x.key)).size,10);
 assert(features.every(x => x.path.startsWith("M") && !x.path.includes("NaN")));
 assert(features.every(x => x.x >= 0 && x.x <= 760 && x.y >= 0 && x.y <= 430));
 assert(features.some(x => x.key === "kauno"));
-console.log("10 apskričių geometrijos ir koordinatės yra tinkamos.");
+// Missing alert is a white map region, distinct from an official all-clear.
+assert.equal(vm.runInContext("lt72VisualCode(true, null)", context), "not_reported");
+assert.equal(vm.runInContext("LT72_COLORS.not_reported[1]", context), "#f5f7fb");
+assert.equal(vm.runInContext("LT72_COLORS.white[1]", context), "#f5f7fb");
+assert.equal(vm.runInContext('lt72VisualCode(true, {kodas:"white"})', context), "white");
+assert.equal(vm.runInContext('lt72VisualCode(true, {kodas:"red"})', context), "red");
+assert.equal(vm.runInContext('lt72VisualCode(true, {kodas:"yellow"})', context), "yellow");
+assert.equal(vm.runInContext('lt72VisualCode(false, {kodas:"white"})', context), "unavailable");
+assert.equal(vm.runInContext("LT72_COLORS.unavailable[1]", context), "#8190a3");
+console.log("Apskritys be įrašo – baltos, be ryšio – pilkos; oficialūs perspėjimai išsaugomi.");
