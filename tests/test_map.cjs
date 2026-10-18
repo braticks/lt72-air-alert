@@ -11,7 +11,17 @@ const topo = JSON.parse(fs.readFileSync(
 ));
 const context = {
   window:{},
-  HTMLElement:class {},
+  HTMLElement:class {
+    attachShadow() {
+      this.shadowRoot = {innerHTML:"",querySelectorAll:() => []};
+      return this.shadowRoot;
+    }
+    dispatchEvent(event) { this.lastEvent = event; return true; }
+  },
+  CustomEvent:class {
+    constructor(type,init) { this.type=type; Object.assign(this,init); }
+  },
+  document:{createElement:tag => ({tagName:tag})},
   customElements:{get:()=>null,define:()=>{}},
 };
 vm.createContext(context);
@@ -43,3 +53,66 @@ assert.equal(vm.runInContext('LT72_DISPLAY_OPTIONS.some(x=>x[0] === "show_discla
 assert.equal(vm.runInContext('LT72AirAlertMapCard.prototype._show.call({_config:{}},"show_icon")',context),true);
 assert.equal(vm.runInContext('LT72AirAlertMapCard.prototype._show.call({_config:{show_icon:false}},"show_icon")',context),false);
 console.log("Vizualinio redaktoriaus parinktys ir seni kortų nustatymai patikrinti.");
+
+
+// Simulated HA visual editor: changing controls must emit config-changed.
+const editor = vm.runInContext("new LT72AirAlertMapEditor()", context);
+editor.setConfig({type:"custom:lt72-air-alert-map"});
+assert(editor.shadowRoot.innerHTML.includes('data-setting="show_icon"'));
+assert(editor.shadowRoot.innerHTML.includes('data-input="region"'));
+assert(editor.shadowRoot.innerHTML.includes('data-input="entity"'));
+editor._emit("show_icon",false);
+assert.equal(editor.lastEvent.type,"config-changed");
+assert.equal(editor.lastEvent.bubbles,true);
+assert.equal(editor.lastEvent.composed,true);
+assert.equal(editor.lastEvent.detail.config.show_icon,false);
+editor._emit("show_icon",true);
+assert.equal(Object.hasOwn(editor.lastEvent.detail.config,"show_icon"),false);
+editor._emit("region","vilniaus");
+assert.equal(editor.lastEvent.detail.config.region,"vilniaus");
+editor._emit("region","");
+assert.equal(Object.hasOwn(editor.lastEvent.detail.config,"region"),false);
+editor._emit("compact",true);
+assert.equal(editor.lastEvent.detail.config.compact,true);
+
+// Simulated HA card: options must affect the HTML, not only the editor.
+const card=vm.runInContext("new LT72AirAlertMapCard()",context);
+const sampleSensor={
+  entity_id:"sensor.lt72_demo", state:"Balta",
+  attributes:{
+    saltinis:"LT72",apskritis:"Kauno apskritis",
+    apskritys:{kauno:{kodas:"white",paskelbta:"2026-10-18 17:00"}}
+  }
+};
+card._shapes=features;
+card.setConfig({type:"custom:lt72-air-alert-map",region:"kauno"});
+card.hass={states:{"sensor.lt72_demo":sampleSensor}};
+const originalHtml=card.shadowRoot.innerHTML;
+assert(originalHtml.includes('<div class="header">'));
+assert(originalHtml.includes('<div class="legend">'));
+assert(originalHtml.includes('<div class="detail">'));
+assert(originalHtml.includes('<div class="foot">'));
+assert(originalHtml.includes('<img src='));
+assert(originalHtml.includes('<text x='));
+assert(originalHtml.includes("Paskelbta: 2026-10-18 17:00"));
+card.setConfig({
+  type:"custom:lt72-air-alert-map",region:"vilniaus",
+  show_header:false,show_legend:false,show_status_panel:false,
+  show_disclaimer:false,show_county_names:false,compact:true
+});
+const compactHtml=card.shadowRoot.innerHTML;
+assert(!compactHtml.includes('<div class="header">'));
+assert(!compactHtml.includes('<div class="legend">'));
+assert(!compactHtml.includes('<div class="detail">'));
+assert(!compactHtml.includes('<div class="foot">'));
+assert(!compactHtml.includes('<text x='));
+assert(compactHtml.includes('<ha-card class="compact">'));
+assert(compactHtml.includes('<svg viewBox='));
+card.setConfig({type:"custom:lt72-air-alert-map",region:"kauno",show_published_time:false});
+assert(!card.shadowRoot.innerHTML.includes("Paskelbta: 2026-10-18 17:00"));
+card.setConfig({type:"custom:lt72-air-alert-map",region:"vilniaus"});
+assert.equal(card._selected,"vilniaus");
+card.setConfig({type:"custom:lt72-air-alert-map"});
+card.hass={states:{"sensor.lt72_demo":sampleSensor}};
+assert.equal(card._selected,"kauno");
+console.log("Vizualinis redaktorius ir kortos parodymo parinktys veikia.");

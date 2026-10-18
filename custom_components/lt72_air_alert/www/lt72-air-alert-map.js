@@ -122,9 +122,10 @@ class LT72AirAlertMapCard extends HTMLElement {
  _show(name) { return this._config[name] !== false; }
  setConfig(config) {
    if (!config || config.type !== "custom:lt72-air-alert-map") throw Error("Neteisingas kortos tipas");
+   const oldRegion = this._config.region;
    this._config = config;
    if (LT72_BYKEY[config.region]) this._selected = config.region;
-   else if (config.region !== undefined) this._selected = null;
+   else if (oldRegion !== config.region) this._selected = null;
    this._render();
  }
  set hass(value) { this._hass = value; this._render(); }
