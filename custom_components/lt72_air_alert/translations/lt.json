@@ -1,0 +1,23 @@
+{
+  "title": "Lietuvos oro pavojus (LT72)",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pasirinkite apskritį",
+        "description": "Skaito viešus LT72 pranešimus. Ši integracija nepakeičia oficialių perspėjimų.",
+        "data": { "region": "Apskritis" }
+      }
+    },
+    "abort": {
+      "already_configured": "Jau pridėta. Apskritį keiskite per „Konfigūruoti“."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pasirinkite apskritį",
+        "data": { "region": "Apskritis" }
+      }
+    }
+  }
+}

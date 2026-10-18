@@ -1,0 +1,23 @@
+{
+  "title": "Lithuanian air alerts (LT72)",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choose county",
+        "description": "Reads public LT72 reports. This integration is not an official warning service.",
+        "data": { "region": "County" }
+      }
+    },
+    "abort": {
+      "already_configured": "Already configured. Select Configure to change county."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Choose county",
+        "data": { "region": "County" }
+      }
+    }
+  }
+}

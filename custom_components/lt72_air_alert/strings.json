@@ -1,0 +1,27 @@
+{
+  "title": "Lietuvos oro pavojus (LT72)",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choose county",
+        "description": "Public LT72 air-alert reports. This is not an emergency warning channel.",
+        "data": {
+          "region": "County"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Already configured. Use Configure to change county."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Select county",
+        "data": {
+          "region": "County"
+        }
+      }
+    }
+  }
+}
