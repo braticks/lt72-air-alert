@@ -1,6 +1,6 @@
 # Lietuvos oro pavojus (LT72) – Home Assistant
 
-![Oro pavojaus ikona](icon.svg)
+<img src="icon.svg" alt="Oro pavojaus ikona" width="64" height="64">
 
 Neoficiali Home Assistant integracija ir interaktyvus Lietuvos **oro pavojaus žemėlapis**. Duomenys imami iš [oficialios LT72 svetainės](https://lt72.lt/).
 
