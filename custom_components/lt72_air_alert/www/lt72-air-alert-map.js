@@ -24,6 +24,19 @@ const LT72_COLORS = {
 };
 const LT72_BYKEY = Object.fromEntries(LT72_REGIONS.map(r => [r[0],r]));
 const LT72_BASE = "/lt72_air_alert/";
+const LT72_DISPLAY_OPTIONS = [
+  ["show_header","Antraštė"],
+  ["show_title","Pavadinimas"],
+  ["show_icon","Ikona"],
+  ["show_subtitle","LT72 ir atnaujinimo dažnis"],
+  ["show_source","Nuoroda į LT72"],
+  ["show_county_names","Apskričių pavadinimai"],
+  ["show_status_panel","Pasirinktos apskrities informacija"],
+  ["show_published_time","Pranešimo laikas"],
+  ["show_legend","Spalvų legenda"],
+  ["show_disclaimer","Informacinis perspėjimas"],
+  ["highlight_selected","Paryškinti pasirinktą apskritį"]
+];
 const LT72_ESC = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
 })[c]);
@@ -105,10 +118,13 @@ class LT72AirAlertMapCard extends HTMLElement {
    this._error = null;
  }
  static getStubConfig() { return {type:"custom:lt72-air-alert-map"}; }
+ static getConfigElement() { return document.createElement("lt72-air-alert-map-editor"); }
+ _show(name) { return this._config[name] !== false; }
  setConfig(config) {
    if (!config || config.type !== "custom:lt72-air-alert-map") throw Error("Neteisingas kortos tipas");
    this._config = config;
    if (LT72_BYKEY[config.region]) this._selected = config.region;
+   else if (config.region !== undefined) this._selected = null;
    this._render();
  }
  set hass(value) { this._hass = value; this._render(); }
@@ -156,12 +172,14 @@ class LT72AirAlertMapCard extends HTMLElement {
    if (!sensor) message = "Nerastas LT72 sensorius. Pridėkite Lietuvos oro pavojaus integraciją.";
    else if (!available) message = "Šiuo metu duomenys neprieinami. Tikrinkite oficialius pranešimus.";
    else if (!current) message = "LT72 nėra paskelbto įrašo šiai apskričiai. Tai nereiškia, kad saugu.";
-   else message = "Paskelbta: " + (current.paskelbta || "laikas nenurodytas");
+   else message = this._show("show_published_time")
+     ? "Paskelbta: " + (current.paskelbta || "laikas nenurodytas")
+     : "";
    const countyShapes = this._shapes ? this._shapes.map(shape => {
      const e = published[shape.key];
      const status = lt72VisualCode(available, e);
      const l = LT72_COLORS[status] || LT72_COLORS.not_reported;
-     const chosen = shape.key === selected[0];
+     const chosen = this._show("highlight_selected") && shape.key === selected[0];
      return '<g data-region="' + shape.key + '" tabindex="0" role="button" class="region' +
        (chosen ? ' selected' : '') + '" aria-label="' + LT72_ESC(shape.name + ': ' + (available ? l[0] : 'Neprieinama')) + '">' +
        '<path d="' + shape.path + '" fill="' + l[1] + '" stroke="' +
@@ -169,9 +187,11 @@ class LT72AirAlertMapCard extends HTMLElement {
        '" stroke-width="' + (chosen ? '3.5' : '1.5') +
        '" stroke-dasharray="' + (status === "not_reported" && !chosen ? "4 3" : "none") +
        '" stroke-linejoin="round"></path>' +
-       '<text x="' + shape.x.toFixed(1) + '" y="' + shape.y.toFixed(1) +
-       '" text-anchor="middle" dominant-baseline="middle" pointer-events="none">' +
-       LT72_ESC(shape.short) + '</text><title>' +
+       (this._show("show_county_names")
+         ? '<text x="' + shape.x.toFixed(1) + '" y="' + shape.y.toFixed(1) +
+           '" text-anchor="middle" dominant-baseline="middle" pointer-events="none">' +
+           LT72_ESC(shape.short) + '</text>'
+         : '') + '<title>' +
        LT72_ESC(shape.name + ' apskritis: ' + l[0]) + '</title></g>';
    }).join("") : "";
    const legends = Object.entries(LT72_COLORS)
@@ -180,6 +200,31 @@ class LT72AirAlertMapCard extends HTMLElement {
      '<span class="legend-item"><span class="sample" style="background:' + l[1] +
      '"></span>' + LT72_ESC(l[0]) + '</span>'
    ).join("");
+   const headerParts = [
+     this._show("show_icon") ? '<img src="' + LT72_BASE + 'icon.svg" class="logo" alt="" />' : '',
+     (this._show("show_title") || this._show("show_subtitle"))
+       ? '<div class="titles">' +
+          (this._show("show_title") ? '<div class="title">' +
+            LT72_ESC(this._config.title ?? "Oro pavojus Lietuvoje") + '</div>' : '') +
+          (this._show("show_subtitle") ? '<div class="sub">LT72 • 10 apskričių • kas 60 s</div>' : '') +
+         '</div>'
+       : '',
+     this._show("show_source") ?
+       '<a class="source" href="https://lt72.lt/" target="_blank" rel="noopener noreferrer">LT72 ↗</a>' : ''
+   ].join("");
+   const header = this._show("show_header") && headerParts
+     ? '<div class="header">' + headerParts + '</div>' : '';
+   const detailPanel = this._show("show_status_panel") ?
+     '<div class="detail"><span class="dot" style="background:' + level[1] + '"></span>' +
+     '<div><div class="region-name">' + LT72_ESC(selected[1]) + ' apskritis</div>' +
+     '<div class="status">' + LT72_ESC(available ? level[0] : 'Neprieinama') + '</div>' +
+     (message ? '<div class="desc">' + LT72_ESC(message) + '</div>' : '') +
+     '</div></div>' : '';
+   const legend = this._show("show_legend") ? '<div class="legend">' + legends + '</div>' : '';
+   const disclaimer = this._show("show_disclaimer") ?
+     '<div class="foot">Balta spalva = LT72 paskelbtas atšaukimas ARBA nėra įrašo ' +
+     '(punktyrinė riba). Be įrašo nereiškia oficialaus pavojaus atšaukimo. ' +
+     'Pilka = duomenys neprieinami. Vadovaukitės LT-Alert ir oficialiais perspėjimais.</div>' : '';
    root.innerHTML = [
      '<style>',
      ':host{display:block;color:var(--primary-text-color);font-family:var(--primary-font-family,Roboto,Arial,sans-serif)}',
@@ -204,27 +249,22 @@ class LT72AirAlertMapCard extends HTMLElement {
      '.sample{height:10px;width:10px;border:1px solid #9ca3af;border-radius:3px;display:inline-block}',
      '.foot{font-size:10px;color:var(--secondary-text-color);margin-top:11px;line-height:1.35}',
      '.loading{padding:46px 10px;text-align:center;color:var(--secondary-text-color);font-size:12px}',
-     '@media(max-width:480px){ha-card{padding:12px}.title{font-size:15px}.logo{width:32px;height:32px}.region text{font-size:15px}.legend{justify-content:flex-start}}',
+     '.compact{padding:9px}.compact .header{margin-bottom:7px}.compact .logo{width:28px;height:28px}', 
+     '.compact .title{font-size:14px}.compact .sub{font-size:10px}', 
+     '.compact .detail{padding:7px 9px;margin-top:7px}.compact .legend{margin-top:7px}',
+     '.compact .foot{margin-top:7px}',
+     '@media(max-width:480px){ha-card{padding:12px}ha-card.compact{padding:8px}.title{font-size:15px}.logo{width:32px;height:32px}.region text{font-size:15px}.legend{justify-content:flex-start}}',
      '</style>',
-     '<ha-card>',
-     '<div class="header"><img src="' + LT72_BASE + 'icon.svg" class="logo" alt="" />',
-     '<div class="titles"><div class="title">' +
-       LT72_ESC(this._config.title || "Oro pavojus Lietuvoje") +
-       '</div><div class="sub">LT72 • 10 apskričių • kas 60 s</div></div>',
-     '<a class="source" href="https://lt72.lt/" target="_blank" rel="noopener noreferrer">LT72 ↗</a></div>',
+     '<ha-card' + (this._config.compact === true ? ' class="compact"' : '') + '>',
+     header,
      '<div class="map">',
      this._error ? '<div class="loading">' + LT72_ESC(this._error) + '</div>' :
        !this._shapes ? '<div class="loading">Kraunamas Lietuvos žemėlapis...</div>' :
        '<svg viewBox="0 0 760 430" role="img" aria-label="Lietuvos oro pavojaus žemėlapis">' + countyShapes + '</svg>',
      '</div>',
-     '<div class="detail"><span class="dot" style="background:' + level[1] + '"></span>',
-     '<div><div class="region-name">' + LT72_ESC(selected[1]) + ' apskritis</div>',
-     '<div class="status">' + LT72_ESC(available ? level[0] : 'Neprieinama') + '</div>',
-     '<div class="desc">' + LT72_ESC(message) + '</div></div></div>',
-     '<div class="legend">' + legends + '</div>',
-     '<div class="foot">Balta spalva = LT72 paskelbtas atšaukimas ARBA nėra įrašo ',
-     '(punktyrinė riba). Be įrašo nereiškia oficialaus pavojaus atšaukimo. ',
-     'Pilka = duomenys neprieinami. Vadovaukitės LT-Alert ir oficialiais perspėjimais.</div>',
+     detailPanel,
+     legend,
+     disclaimer,
      '</ha-card>'
    ].join("");
    root.querySelectorAll("[data-region]").forEach(node => {
@@ -235,6 +275,113 @@ class LT72AirAlertMapCard extends HTMLElement {
      });
    });
  }
+}
+
+
+/**
+ * Home Assistant visual configuration editor. Each field emits the standard
+ * config-changed event, so no YAML edits are needed and old cards keep defaults.
+ */
+class LT72AirAlertMapEditor extends HTMLElement {
+ constructor() {
+   super();
+   this.attachShadow({mode:"open"});
+   this._config = {type:"custom:lt72-air-alert-map"};
+   this._hass = null;
+ }
+ setConfig(config) {
+   this._config = {...config};
+   this._render();
+ }
+ set hass(value) {
+   this._hass = value;
+   this._render();
+ }
+ _emit(key, value) {
+   const next = {...this._config};
+   if (key === "region" || key === "entity" || key === "title") {
+     if (value) next[key] = value;
+     else delete next[key];
+   } else if (key === "compact") {
+     if (value) next.compact = true;
+     else delete next.compact;
+   } else {
+     // Every show_* setting and highlight_selected is enabled by default.
+     if (value) delete next[key];
+     else next[key] = false;
+   }
+   this._config = next;
+   this.dispatchEvent(new CustomEvent("config-changed",{
+     bubbles:true, composed:true, detail:{config:next}
+   }));
+ }
+ _render() {
+   const root = this.shadowRoot;
+   if (!root) return;
+   const region = this._config.region || "";
+   const selectedEntity = this._config.entity || "";
+   const entities = this._hass ? Object.values(this._hass.states)
+     .filter(s => s.entity_id.startsWith("sensor.") &&
+       s.attributes?.saltinis === "LT72" &&
+       typeof s.attributes.apskritys === "object") : [];
+   if (selectedEntity && !entities.some(s => s.entity_id === selectedEntity)) {
+     entities.unshift({entity_id:selectedEntity,attributes:{friendly_name:selectedEntity}});
+   }
+   const options = LT72_DISPLAY_OPTIONS.map(([key,label]) => {
+     const checked = this._config[key] !== false ? " checked" : "";
+     return '<label class="flag"><input type="checkbox" data-setting="' + key +
+       '"' + checked + '><span>' + LT72_ESC(label) + '</span></label>';
+   }).join("");
+   root.innerHTML = [
+     '<style>',
+     ':host{display:block;color:var(--primary-text-color);font-family:var(--primary-font-family,Roboto,Arial,sans-serif);font-size:14px}',
+     '.editor{padding:8px 0}.group{margin:4px 0 16px}.section{font-size:13px;font-weight:700;margin:16px 0 10px}',
+     '.hint{font-size:12px;color:var(--secondary-text-color);line-height:1.4;margin:7px 0}',
+     '.field{display:block;margin:11px 0}.caption{display:block;font-size:12px;color:var(--secondary-text-color);margin-bottom:5px}',
+     'input[type="text"],select{width:100%;box-sizing:border-box;border:1px solid var(--divider-color,#8a8a8a);',
+     'border-radius:8px;padding:10px 9px;background:var(--card-background-color);color:var(--primary-text-color);font:inherit}',
+     '.toggles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px}',
+     '.flag{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--divider-color);border-radius:8px;cursor:pointer}',
+     '.flag input{width:18px;height:18px;margin:0;flex-shrink:0;accent-color:var(--primary-color,#03a9f4)}',
+     '.flag span{line-height:1.25}.compact-option{margin-top:12px}',
+     '</style>',
+     '<div class="editor">',
+     '<div class="section">Duomenys ir apskritis</div>',
+     '<label class="field"><span class="caption">LT72 jutiklis</span><select data-input="entity">',
+     '<option value="">Automatiškai rasti LT72 jutiklį</option>',
+     ...entities.map(s => '<option value="' + LT72_ESC(s.entity_id) + '"' +
+       (s.entity_id === selectedEntity ? ' selected' : '') + '>' +
+       LT72_ESC(s.attributes.friendly_name || s.entity_id) + '</option>'),
+     '</select></label>',
+     '<label class="field"><span class="caption">Iš pradžių pasirinkta apskritis</span>',
+     '<select data-input="region"><option value="">Pagal integracijos nustatymus</option>',
+     ...LT72_REGIONS.map(r => '<option value="' + r[0] + '"' +
+       (r[0] === region ? ' selected' : '') + '>' + LT72_ESC(r[1]) + ' apskritis</option>'),
+     '</select></label>',
+     '<label class="field"><span class="caption">Kortos pavadinimas</span>',
+     '<input type="text" data-input="title" placeholder="Oro pavojus Lietuvoje" value="' +
+       LT72_ESC(this._config.title || "") + '"></label>',
+     '<div class="section">Rodyti kortoje</div>',
+     '<div class="toggles">',options,'</div>',
+     '<div class="section">Išdėstymas</div>',
+     '<label class="flag compact-option"><input type="checkbox" data-setting="compact"' +
+       (this._config.compact === true ? ' checked' : '') +
+       '><span>Kompaktiška korta</span></label>',
+     '<p class="hint">Žemėlapis visuomet rodomas. Baltai gali būti rodoma ir apskritis, apie kurią LT72 įrašo nėra – tai nėra oficialus saugumo patvirtinimas.</p>',
+     '</div>'
+   ].join("");
+   for (const element of root.querySelectorAll("[data-input]")) {
+     element.addEventListener("change", () =>
+       this._emit(element.getAttribute("data-input"), element.value));
+   }
+   for (const element of root.querySelectorAll("[data-setting]")) {
+     element.addEventListener("change", () =>
+       this._emit(element.getAttribute("data-setting"), element.checked));
+   }
+ }
+}
+if (!customElements.get("lt72-air-alert-map-editor")) {
+ customElements.define("lt72-air-alert-map-editor", LT72AirAlertMapEditor);
 }
 
 if (!customElements.get("lt72-air-alert-map")) {

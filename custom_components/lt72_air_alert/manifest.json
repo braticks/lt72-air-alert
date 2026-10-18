@@ -1,7 +1,7 @@
 {
   "domain": "lt72_air_alert",
   "name": "Lietuvos oro pavojus (LT72)",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "documentation": "https://github.com/braticks/lt72-air-alert",
   "issue_tracker": "https://github.com/braticks/lt72-air-alert/issues",
   "codeowners": [

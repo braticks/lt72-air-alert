@@ -26,10 +26,22 @@ Neoficiali Home Assistant integracija ir interaktyvus Lietuvos **oro pavojaus ž
 Šioje integracijoje Lovelace kortos JS modulis paprastai užregistruojamas automatiškai. Jei naudojate YAML režimo Lovelace resursus, pridėkite modulį rankiniu būdu per Dashboard → Resources:
 
 ```text
-/lt72_air_alert/lt72-air-alert-map.js?v=0.2.1
+/lt72_air_alert/lt72-air-alert-map.js?v=0.3.0
 ```
 
 ## Oro pavojaus žemėlapio korta
+
+**Nuo v0.3.0 yra tikras vizualinis kortos redaktorius.** Dashboard → Edit → atidarykite kortą arba Add card → **LT72 – oro pavojaus žemėlapis**. Nereikia YAML norint pasirinkti, ką rodyti.
+
+UI galima pasirinkti **LT72 sensorių**, pradžioje pažymėtą **apskritį**, **kortos pavadinimą**, **kompaktišką išdėstymą** ir įjungti/išjungti:
+- Antraštę, pavadinimą, ikoną, subtitrą, nuorodą į LT72;
+- Apskričių pavadinimus, pasirinktos apskrities paryškinimą;
+- Būsenos informacinį skydelį ir pranešimo laiką;
+- Spalvų legendą ir saugumo paaiškinimą.
+
+Visi senų kortų nustatymai lieka kaip buvo; nieko nereikia perkonfigūruoti. Žemėlapis rodomas visada. Neužpildytos parinktys naudoja seną numatytąjį vaizdą.
+
+### YAML pavyzdys (pasirinktinai)
 
 Dashboard → Edit → Add card → Manual (YAML):
 
@@ -40,6 +52,8 @@ region: kauno
 ```
 
 `region` yra pasirinktinė paryškinama apskritis, **ne duomenų filtras**: žemėlapyje matomos visos apskritys.
+
+Pavyzdžiui, paslėpti legendą ir pranešimo laiką bei įjungti kompaktišką vaizdą galima ir YAML: `show_legend: false`, `show_published_time: false`, `compact: true`. Keisti YAML nereikia, jei naudojate kortos UI.
 
 Jei automatiškai neaptinkamas LT72 sensorius, jo entity ID galite įrašyti patys:
 

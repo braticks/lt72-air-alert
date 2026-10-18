@@ -32,4 +32,14 @@ assert.equal(vm.runInContext('lt72VisualCode(true, {kodas:"red"})', context), "r
 assert.equal(vm.runInContext('lt72VisualCode(true, {kodas:"yellow"})', context), "yellow");
 assert.equal(vm.runInContext('lt72VisualCode(false, {kodas:"white"})', context), "unavailable");
 assert.equal(vm.runInContext("LT72_COLORS.unavailable[1]", context), "#8190a3");
-console.log("Apskritys be įrašo – baltos, be ryšio – pilkos; oficialūs perspėjimai išsaugomi.");
+// Visual editor contract: configurable fields, default-on flags, standard change event.
+assert.equal(vm.runInContext('typeof LT72AirAlertMapCard.getConfigElement',context),"function");
+assert.equal(vm.runInContext('LT72_DISPLAY_OPTIONS.length',context),11);
+assert.equal(vm.runInContext('LT72_DISPLAY_OPTIONS.some(x=>x[0] === "show_county_names")',context),true);
+assert.equal(vm.runInContext('LT72_DISPLAY_OPTIONS.some(x=>x[0] === "show_status_panel")',context),true);
+assert.equal(vm.runInContext('LT72_DISPLAY_OPTIONS.some(x=>x[0] === "show_legend")',context),true);
+assert.equal(vm.runInContext('LT72_DISPLAY_OPTIONS.some(x=>x[0] === "show_disclaimer")',context),true);
+// Legacy cards have every element visible unless the user disables it.
+assert.equal(vm.runInContext('LT72AirAlertMapCard.prototype._show.call({_config:{}},"show_icon")',context),true);
+assert.equal(vm.runInContext('LT72AirAlertMapCard.prototype._show.call({_config:{show_icon:false}},"show_icon")',context),false);
+console.log("Vizualinio redaktoriaus parinktys ir seni kortų nustatymai patikrinti.");

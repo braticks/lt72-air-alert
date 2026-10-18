@@ -15,7 +15,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 STATIC_URL = f"/{DOMAIN}"
 CARD_URL = f"{STATIC_URL}/lt72-air-alert-map.js"
-CARD_VERSION = "0.2.1"
+CARD_VERSION = "0.3.0"
 FRONTEND_DIR = Path(__file__).parent / "www"
 
 
