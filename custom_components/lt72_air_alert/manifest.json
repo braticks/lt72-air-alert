@@ -1,7 +1,7 @@
 {
   "domain": "lt72_air_alert",
   "name": "Lietuvos oro pavojus (LT72)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "documentation": "https://github.com/braticks/lt72-air-alert",
   "issue_tracker": "https://github.com/braticks/lt72-air-alert/issues",
   "codeowners": [
@@ -9,5 +9,9 @@
   ],
   "config_flow": true,
   "iot_class": "cloud_polling",
-  "requirements": []
+  "requirements": [],
+  "dependencies": [
+    "http",
+    "lovelace"
+  ]
 }

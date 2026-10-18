@@ -69,6 +69,15 @@ class LT72AirAlertSensor(CoordinatorEntity[LT72Coordinator], SensorEntity):
         code = record["code"] if record else "not_reported"
         return {
             "apskritis": REGIONS[self._region],
+            "apskritys": {
+                key: {
+                    "busena": STATE_NAMES[record["code"]],
+                    "kodas": record["code"],
+                    "paskelbta": record["published_at"],
+                }
+                for key, record in self.coordinator.data.items()
+                if key in REGIONS
+            },
             "pavojaus_kodas": code,
             "paskelbta": record["published_at"] if record else None,
             "rekomendacija": STATE_RECOMMENDATIONS[code],

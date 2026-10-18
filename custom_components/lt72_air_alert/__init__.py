@@ -7,12 +7,14 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .coordinator import LT72Coordinator
+from .frontend import async_setup_frontend
 
 PLATFORMS = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Start polling and set up the region sensor."""
+    await async_setup_frontend(hass)
     coordinator = LT72Coordinator(hass)
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault("lt72_air_alert", {})[entry.entry_id] = coordinator
