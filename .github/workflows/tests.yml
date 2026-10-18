@@ -18,3 +18,10 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validate JSON files
         run: python -c "import json,pathlib; [json.loads(p.read_text()) for p in pathlib.Path('custom_components').rglob('*.json')]; json.loads(pathlib.Path('hacs.json').read_text())"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate card JavaScript syntax
+        run: node --check custom_components/lt72_air_alert/www/lt72-air-alert-map.js
+      - name: Validate county map geometry
+        run: node tests/test_map.cjs
