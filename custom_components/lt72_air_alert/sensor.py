@@ -58,8 +58,7 @@ class LT72AirAlertSensor(CoordinatorEntity[LT72Coordinator], SensorEntity):
         if self.coordinator.data.get("_source_available") is False:
             return "mdi:alert-circle-outline"
         record = self.coordinator.data.get(self._region)
-        available = self.coordinator.data.get("_source_available") is not False
-        code = record["code"] if record else ("not_reported" if available else "unavailable")
+        code = record["code"] if record else "not_reported"
         return {
             "red": "mdi:alert-octagon",
             "yellow": "mdi:alert",
@@ -70,8 +69,9 @@ class LT72AirAlertSensor(CoordinatorEntity[LT72Coordinator], SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        record = self.coordinator.data.get(self._region)
-        code = record["code"] if record else "not_reported"
+        available = self.coordinator.data.get("_source_available") is not False
+        record = self.coordinator.data.get(self._region) if available else None
+        code = record["code"] if record else ("not_reported" if available else "unavailable")
         return {
             "apskritis": REGIONS[self._region],
             "apskritys": {
