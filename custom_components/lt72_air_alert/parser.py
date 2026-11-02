@@ -106,6 +106,13 @@ def parse_air_alerts(html: str) -> dict[str, dict[str, str | None]]:
         None,
     )
     if start is None:
+        # Current LT72 homepage: an explicit no-active-event banner replaces
+        # the older "Šiuo metu fiksuojami pavojai" section when nothing is active.
+        # This is NOT an individual county's official BALTA cancellation.
+        # Leave county states unpublished rather than claiming they are safe.
+        visible_text = _ascii(" ".join(lines))
+        if re.search(r"\bsiuo metu pavojaus ivykio nera\b", visible_text):
+            return {}
         raise ValueError("LT72 active alerts section was not found")
 
     end = next(
