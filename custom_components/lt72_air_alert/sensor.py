@@ -46,6 +46,8 @@ class LT72AirAlertSensor(CoordinatorEntity[LT72Coordinator], SensorEntity):
 
     @property
     def native_value(self) -> str:
+        if self.coordinator.data.get("_source_available") is False:
+            return "Neprieinama"
         record = self.coordinator.data.get(self._region)
         if record is None:
             return "Nepaskelbta"
@@ -53,8 +55,11 @@ class LT72AirAlertSensor(CoordinatorEntity[LT72Coordinator], SensorEntity):
 
     @property
     def icon(self) -> str:
+        if self.coordinator.data.get("_source_available") is False:
+            return "mdi:alert-circle-outline"
         record = self.coordinator.data.get(self._region)
-        code = record["code"] if record else "not_reported"
+        available = self.coordinator.data.get("_source_available") is not False
+        code = record["code"] if record else ("not_reported" if available else "unavailable")
         return {
             "red": "mdi:alert-octagon",
             "yellow": "mdi:alert",
@@ -78,9 +83,12 @@ class LT72AirAlertSensor(CoordinatorEntity[LT72Coordinator], SensorEntity):
                 for key, record in self.coordinator.data.items()
                 if key in REGIONS
             },
+            "saltinis_pasiekiamas": available,
+            "saltinio_klaida": self.coordinator.data.get("_source_error"),
             "pavojaus_kodas": code,
             "paskelbta": record["published_at"] if record else None,
-            "rekomendacija": STATE_RECOMMENDATIONS[code],
+            "rekomendacija": (STATE_RECOMMENDATIONS[code] if available else
+                "LT72 duomenų gauti nepavyko. Nežinoma, ar yra oro pavojus."),
             "saltinis": "LT72",
             "saltinio_adresas": SOURCE_URL,
             "pastaba": "Neoficiali integracija, nepakeičia LT-Alert perspėjimų.",
