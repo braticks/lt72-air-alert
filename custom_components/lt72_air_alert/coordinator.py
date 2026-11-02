@@ -8,7 +8,7 @@ import logging
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN, SOURCE_URL
 from .parser import parse_air_alerts
@@ -39,4 +39,7 @@ class LT72Coordinator(DataUpdateCoordinator[dict]):
                 page = await response.text()
             return parse_air_alerts(page)
         except (ClientError, TimeoutError, ValueError) as exc:
-            raise UpdateFailed(f"Nepavyko gauti LT72 perspėjimų: {exc}") from exc
+            # Keep the entry and sensor loaded even if LT72 HTML changes or the site is offline.
+            # Never interpret unknown alerts as a safe / cancelled state.
+            _LOGGER.warning("LT72 alerts unavailable: %s", exc)
+            return {"_source_available": False, "_source_error": str(exc)}
