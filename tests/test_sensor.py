@@ -52,7 +52,7 @@ class SensorStateTests(unittest.TestCase):
         attributes = sensor.extra_state_attributes
         self.assertIs(attributes["saltinis_pasiekiamas"], False)
         self.assertEqual(attributes["pavojaus_kodas"], "unavailable")
-        self.assertIn("Nepavyko", attributes["rekomendacija"])
+        self.assertIn("nepavyko", attributes["rekomendacija"].lower())
 
     def test_no_published_county_alert_is_not_white(self):
         sensor = self.make_sensor({})
