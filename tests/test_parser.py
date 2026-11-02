@@ -45,6 +45,24 @@ class ParseAirAlertsTest(unittest.TestCase):
     def test_no_active_entries_not_white(self):
         self.assertEqual(parse_air_alerts(page("<p>Pranešimų nėra</p>")), {})
 
+    def test_current_homepage_no_event_banner(self):
+        # The November 2026 homepage uses this banner, not the old section.
+        html = (
+            "<html><body><p>Šiuo metu pavojaus įvykio nėra.</p>"
+            "<h3>Perspėjimo pranešimai</h3>"
+            "<p>2026-10-18 - Oro pavojaus atšaukimas BALTA</p>"
+            "</body></html>"
+        )
+        self.assertEqual(parse_air_alerts(html), {})
+
+    def test_script_only_no_event_banner_is_not_trusted(self):
+        html = (
+            "<html><script>var message='Šiuo metu pavojaus įvykio nėra.';</script>"
+            "<body><h2>Perspėjimo pranešimai</h2></body></html>"
+        )
+        with self.assertRaises(ValueError):
+            parse_air_alerts(html)
+
     def test_missing_section_fails_closed(self):
         with self.assertRaises(ValueError):
             parse_air_alerts("<html><body><h3>Oro pavojaus nėra (BALTA)</h3></body></html>")
